@@ -4,10 +4,31 @@
  * @packageDocumentation
  */
 
-import type { Serve } from "bun";
+import type { BunFile, HTMLBundle, Serve } from "bun";
 import type { Application } from "./application";
 import { createHttpHandler } from "./create-http-handler";
 import type { RequestHandler } from "./types";
+
+/**
+ * Bun fullstack development flag / object (`Bun.serve({ development })`).
+ *
+ * @see https://bun.com/docs/bundler/fullstack
+ */
+export type ServeDevelopment =
+    | boolean
+    | {
+          chromeDevToolsAutomaticWorkspaceFolders?: boolean;
+          console?: boolean;
+          hmr?: boolean;
+      };
+
+/**
+ * Values accepted on `Bun.serve({ routes })` for HTML / static coexistence.
+ * Prefer dedicated paths (e.g. `/hmr-demo`) — do not replace named Router routes.
+ *
+ * @see https://bun.com/docs/runtime/http/server#html-imports
+ */
+export type ServeRouteValue = HTMLBundle | Response | false | BunFile;
 
 /**
  * Options accepted by {@link createServeOptions}.
@@ -38,6 +59,18 @@ export interface CreateServeOptionsInput {
      * Bun.serve error callback.
      */
     error?: (error: Error) => Response;
+
+    /**
+     * Bun fullstack development mode (HMR, SourceMap, richer errors).
+     * Defaults to `app.getConfig().development` when omitted.
+     */
+    development?: ServeDevelopment;
+
+    /**
+     * Bun.serve HTML / static routes that coexist with the typed Router `fetch`.
+     * Use dedicated paths so named `RouteRegistry` routes stay authoritative.
+     */
+    routes?: Record<string, ServeRouteValue>;
 }
 
 /**
@@ -45,6 +78,11 @@ export interface CreateServeOptionsInput {
  *
  * Mirrors the fetch wrapper used by {@link Application.start} so apps can call
  * `Bun.serve(createServeOptions(app))` directly when needed.
+ *
+ * When `development` is true (from app config or overrides), Bun enables fullstack
+ * HMR for HTML imports registered via {@link CreateServeOptionsInput.routes}.
+ * This does **not** regenerate `RouteRegistry` — use `startRoutesAutoHook` /
+ * `compileArtifact` for typed route artifacts.
  *
  * @param app - Booted application instance
  * @param overrides - Optional serve overrides
@@ -62,10 +100,15 @@ export function createServeOptions(
         hostname: overrides.hostname ?? config.hostname,
         idleTimeout: overrides.idleTimeout ?? 30,
         port: overrides.port ?? config.port,
+        development: overrides.development ?? config.development,
     };
 
     if (overrides.error) {
         options.error = overrides.error;
+    }
+
+    if (overrides.routes !== undefined) {
+        options.routes = overrides.routes;
     }
 
     return options;
