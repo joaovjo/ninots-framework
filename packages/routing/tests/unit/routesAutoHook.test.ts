@@ -183,4 +183,80 @@ describe("startRoutesAutoHook() resilience (no long-running watch)", () => {
             await rm(tempRoot, { recursive: true, force: true });
         }
     });
+
+    test("compileArtifact overrides resolveRouter+emit on debounce", async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), "ninots-routes-compile-artifact-"));
+        const written: string[] = [];
+        const controller = new AbortController();
+        const resolveRouter = mock(() => new Router());
+        const compileArtifact = mock(async (): Promise<"written" | "unchanged"> => "written");
+
+        try {
+            const hookDone = startRoutesAutoHook({
+                routesDirs: [tempRoot],
+                outPath: join(tempRoot, "out.d.ts"),
+                resolveRouter,
+                compileArtifact,
+                signal: controller.signal,
+                debounceMs: 30,
+                onWritten: (rel) => {
+                    written.push(rel);
+                },
+            });
+
+            await Bun.write(join(tempRoot, "web.ts"), "export {};\n");
+            await Bun.sleep(120);
+            controller.abort();
+            await hookDone;
+
+            expect(compileArtifact).toHaveBeenCalled();
+            expect(resolveRouter).not.toHaveBeenCalled();
+            expect(written.length).toBeGreaterThan(0);
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true });
+        }
+    });
+
+    test("compileArtifact unchanged skips onWritten; errors warn without reject", async () => {
+        const tempRoot = await mkdtemp(join(tmpdir(), "ninots-routes-compile-artifact-err-"));
+        const written: string[] = [];
+        const warnings: string[] = [];
+        const controller = new AbortController();
+        let calls = 0;
+
+        try {
+            const hookDone = startRoutesAutoHook({
+                routesDirs: [tempRoot],
+                outPath: join(tempRoot, "out.d.ts"),
+                resolveRouter: () => new Router(),
+                compileArtifact: async () => {
+                    calls += 1;
+                    if (calls === 1) {
+                        return "unchanged";
+                    }
+                    throw new Error("spawn failed");
+                },
+                signal: controller.signal,
+                debounceMs: 30,
+                onWritten: (rel) => {
+                    written.push(rel);
+                },
+                onWarn: (message) => {
+                    warnings.push(message);
+                },
+            });
+
+            await Bun.write(join(tempRoot, "web.ts"), "export {};\n");
+            await Bun.sleep(120);
+            await Bun.write(join(tempRoot, "api.ts"), "export {};\n");
+            await Bun.sleep(120);
+            controller.abort();
+            await hookDone;
+
+            expect(written).toEqual([]);
+            expect(warnings.some((message) => message.includes("spawn failed"))).toBe(true);
+        } finally {
+            await rm(tempRoot, { recursive: true, force: true });
+        }
+    });
 });

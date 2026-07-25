@@ -19,8 +19,16 @@ export interface RoutesAutoHookOptions {
     routesDirs: string[];
     /** Relative path for the `.d.ts` artifact. @default `types/routes.d.ts` */
     outPath?: string;
-    /** Resolve the live Router (re-called after each debounced change). */
+    /**
+     * Resolve the live Router (re-called after each debounced change).
+     * Ignored when {@link compileArtifact} is set.
+     */
     resolveRouter: () => Router | Promise<Router>;
+    /**
+     * Optional compile override for the debounce path (e.g. spawn `routes:compile`
+     * in a cold Bun process). When set, skips in-process `resolveRouter`+emit.
+     */
+    compileArtifact?: () => Promise<"written" | "unchanged">;
     /** Abort to stop all watchers (ServeCommand SIGINT/SIGTERM). */
     signal?: AbortSignal;
     /** Coalesce Windows multi-event / atomic saves. @default 150 */
@@ -128,10 +136,13 @@ export async function startRoutesAutoHook(options: RoutesAutoHookOptions): Promi
 
     const runCompile = async (): Promise<void> => {
         try {
-            const result = await compileRouteRegistryArtifact({
-                resolveRouter: options.resolveRouter,
-                outPath,
-            });
+            const result =
+                options.compileArtifact !== undefined
+                    ? await options.compileArtifact()
+                    : await compileRouteRegistryArtifact({
+                          resolveRouter: options.resolveRouter,
+                          outPath,
+                      });
             if (result === "written") {
                 onWritten(outRel);
             }
