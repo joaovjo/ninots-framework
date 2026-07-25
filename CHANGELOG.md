@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [0.12.1](https://github.com/nino-ts/framework/compare/v0.12.0...v0.12.1) (2026-07-25)
+
+
+### Bug Fixes
+
+* **routing:** allow compileArtifact override on routes auto-hook ([4059419](https://github.com/nino-ts/framework/commit/4059419f3400d6868366989cd9769cee925b0138))
+* **routing:** compileArtifact override for routes auto-hook ([1624bd2](https://github.com/nino-ts/framework/commit/1624bd2a2e38ead7a11c0c65de0bd3da6e5bddc9))
+
 ## [0.12.0](https://github.com/nino-ts/framework/compare/v0.11.1...v0.12.0) (2026-07-22)
 
 
