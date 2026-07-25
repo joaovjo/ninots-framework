@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [0.12.2](https://github.com/nino-ts/framework/compare/v0.12.1...v0.12.2) (2026-07-25)
+## [0.13.0](https://github.com/nino-ts/framework/compare/v0.12.1...v0.13.0) (2026-07-25)
 
 
 ### Features
