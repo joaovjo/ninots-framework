@@ -1,6 +1,14 @@
 # Changelog
 
 
+## [0.13.0](https://github.com/nino-ts/framework/compare/v0.12.1...v0.13.0) (2026-07-25)
+
+
+### Features
+
+* **foundation:** add development and routes to createServeOptions (Fixes [#78](https://github.com/nino-ts/framework/issues/78)) ([c32abb0](https://github.com/nino-ts/framework/commit/c32abb0078aaed785542958d6a0bae74f0c0540c))
+* **foundation:** Bun fullstack HMR — createServeOptions development + routes (Sprint 13) ([4864d1e](https://github.com/nino-ts/framework/commit/4864d1ebebc787c2257063b889a745765469ce2a))
+
 ## [0.12.1](https://github.com/nino-ts/framework/compare/v0.12.0...v0.12.1) (2026-07-25)
 
 
